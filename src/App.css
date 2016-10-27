@@ -18,11 +18,18 @@
   font-size: large;
 }
 
-.App-login{
+.App-login,
+.App-loading {
   display: flex;
   height: calc(100vh - 190px);
   justify-content: center;
   align-items: center;
+}
+
+.App-loading img {
+  display: block;
+  vertical-align: top;
+  animation: App-logo-spin infinite 1.5s linear;
 }
 
 .App-login button {
