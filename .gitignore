@@ -38,10 +38,7 @@ jspm_packages
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # dependencies
-node_modules
-
-# testing
-coverage
+src/firebase.config.js
 
 # production
 build
