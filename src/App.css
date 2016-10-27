@@ -18,6 +18,37 @@
   font-size: large;
 }
 
+.App-login{
+  display: flex;
+  height: calc(100vh - 190px);
+  justify-content: center;
+  align-items: center;
+}
+
+.App-login button {
+  appearance: none;
+  cursor: pointer;
+  box-sizing: content-box;
+  height: 64px;
+  margin: 0;
+  padding: 24px;
+  border: none;
+  background-color: #61dafb;
+  color: #222;
+  font-size: large;
+  line-height: 1;
+  transition: background-color 200ms ease;
+}
+.App-login button:hover,
+.App-login button:active{
+  background-color: #57c4e1;
+}
+
+.App-login img {
+  margin-right: 15px;
+  vertical-align: middle;
+}
+
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
