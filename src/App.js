@@ -1,10 +1,10 @@
-import firebase, { githubAuthProvider } from './firebase';
+import firebase, { firebaseDb, githubAuthProvider } from './firebase';
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import icon_123_spinner from './icons/icon_123_spinner.svg';
 import icon_433_github from './icons/icon_433_github.svg';
 import './App.css';
-import actions, { RECEIVE_AUTHORIZATION } from './actions';
+import actions, { RECEIVE_AUTHORIZATION, RECEIVE_USERS } from './actions';
 
 class App extends Component {
   /**
@@ -15,8 +15,29 @@ class App extends Component {
     return {
       user       : null,
       token      : null,
+      users      : {},
       uiIsLoading: true
     }
+  }
+
+  /**
+   * @static redirect to login
+   * @returns {!firebase.Promise.<void>|firebase.Promise<any>}
+   */
+  static signInWithRedirect() {
+    return firebase
+      .auth()
+      .signInWithRedirect(githubAuthProvider);
+  }
+
+  /**
+   * @listen click on (.App-login button)
+   * @param ev
+   */
+  static handleClickLoginButton(ev) {
+    ev.preventDefault();
+
+    App.signInWithRedirect();
   }
 
   /**
@@ -34,22 +55,16 @@ class App extends Component {
    * @method lifecycle
    */
   componentWillMount() {
-    // auth
-    firebase
-      .auth()
-      .getRedirectResult()
-      .then(result => {
+    // bind DB
+    firebaseDb
+      .ref('users')
+      .on('value', (snapShot) => {
         this.dispatch(
-          actions.receiveAuthorization(
-            result.credential ? {
-              user : result.user,
-              token: result.credential.accessToken
-            } : (
-              undefined
-            )
-          )
+          actions.receiveUsers(snapShot.val())
         );
-      })
+      });
+
+    this.getAuthResult()
       .catch((error) => {
         console.log('error', error);
       });
@@ -82,14 +97,62 @@ class App extends Component {
         return {
           user,
           token,
-          uiIsLoading: false
+          uiIsLoading: Object.keys(this.state.users).length > 0
         };
       })();
+
+    case RECEIVE_USERS:
+      return {
+        users      : Object.assign({}, this.state.users, payload),
+        uiIsLoading: Object.keys(this.state.users).length > 0
+      };
 
     default:
       return this.state;
     }
+  }
 
+  /**
+   * @method request authentication
+   */
+  getAuthResult() {
+    return firebase
+      .auth()
+      .getRedirectResult()
+      .then(result => {
+        if (result.credential) {
+          this.dispatch(
+            actions.receiveAuthorization({
+              user : result.user,
+              token: result.credential.accessToken
+            })
+          );
+          return this.saveUser();
+        }
+        this.dispatch(actions.receiveAuthorization());
+        return Promise.resolve();
+      });
+  }
+
+  /**
+   * @method save user
+   * @returns {Promise.<*>}
+   */
+  saveUser() {
+    // cache
+    const { user } = this.state;
+
+    if (!user) {
+      return Promise.reject(new Error('no user'));
+    }
+
+    const { uid, displayName, photoURL } = user;
+    return firebaseDb
+      .ref(`users/${uid}`)
+      .set({
+        displayName,
+        photoURL
+      });
   }
 
   /**
@@ -97,7 +160,7 @@ class App extends Component {
    */
   render() {
     // cache
-    const { user, token, uiIsLoading } = this.state;
+    const { user, token, users, uiIsLoading } = this.state;
 
     // JSX template
     return (
@@ -107,11 +170,11 @@ class App extends Component {
           <h2>Welcome to React Firebase Chat</h2>
         </div>
         {(() => {
-          if (user && token) {
+          if (uiIsLoading) {
             return (
-              <p className="App-intro">hoge</p>
+              <div className="App-loading"><img src={icon_123_spinner} alt="Loading..." width={64} height={64} /></div>
             );
-          } else if (!uiIsLoading) {
+          } else if (!(user && token)) {
             return (
               <div className="App-login">
                 <button type="button" onClick={App.handleClickLoginButton}><img src={icon_433_github} alt="" width={64} height={64} />Login with GitHub.</button>
@@ -119,23 +182,19 @@ class App extends Component {
             );
           }
           return (
-            <div className="App-loading"><img src={icon_123_spinner} alt="Loading..." width={64} height={64} /></div>
+            <div className="App-main">
+              <div className="Users">
+                <ul>
+                  {Object.keys(users).map((uid) => (
+                    <li><img src={users[uid].photoURL} alt="" width={64} /><span>{users[uid].displayName}</span></li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           );
         })()}
       </div>
     );
-  }
-
-  /**
-   * @listen click on (.App-login button)
-   * @param ev
-   */
-  static handleClickLoginButton(ev) {
-    ev.preventDefault();
-
-    firebase
-      .auth()
-      .signInWithRedirect(githubAuthProvider);
   }
 }
 
