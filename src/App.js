@@ -4,17 +4,16 @@ import logo from './logo.svg';
 import icon_123_spinner from './icons/icon_123_spinner.svg';
 import icon_433_github from './icons/icon_433_github.svg';
 import './App.css';
-import actions, { RECEIVE_AUTHORIZATION, RECEIVE_USERS } from './actions';
+import actions, { REQUEST_AUTHORIZATION, RECEIVE_AUTHORIZATION, REQUEST_USERS, RECEIVE_USERS } from './actions';
 
 class App extends Component {
   /**
    * @static
-   * @returns {{user: null, token: null, uiIsLoading: boolean}}
+   * @returns {{user: null, uiIsLoading: boolean}}
    */
   static get initialState() {
     return {
       user       : null,
-      token      : null,
       users      : {},
       uiIsLoading: true
     }
@@ -64,10 +63,17 @@ class App extends Component {
         );
       });
 
-    this.getAuthResult()
-      .catch((error) => {
-        console.log('error', error);
-      });
+    firebase
+      .auth()
+      .onAuthStateChanged(this.saveUser.bind(this));
+    this.getAuthResult();
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  get hasUsers() {
+    return Object.keys(this.state.users).length > 0;
   }
 
   /**
@@ -77,6 +83,7 @@ class App extends Component {
   dispatch(action) {
     // cache
     const { type, payload } = action;
+    console.log(`dispatch: ${type}`, payload);
 
     // update state
     this.setState(this.reduce(type, payload));
@@ -91,20 +98,22 @@ class App extends Component {
   reduce(type, payload) {
     switch (type) {
 
+    case REQUEST_AUTHORIZATION:
+    case REQUEST_USERS:
+      return {
+        uiIsLoading: true
+      };
+
     case RECEIVE_AUTHORIZATION:
-      return (() => {
-        const { user, token } = payload || {};
-        return {
-          user,
-          token,
-          uiIsLoading: Object.keys(this.state.users).length > 0
-        };
-      })();
+      return {
+        user       : payload || this.state.user,
+        uiIsLoading: false
+      };
 
     case RECEIVE_USERS:
       return {
         users      : Object.assign({}, this.state.users, payload),
-        uiIsLoading: Object.keys(this.state.users).length > 0
+        uiIsLoading: false
       };
 
     default:
@@ -116,21 +125,15 @@ class App extends Component {
    * @method request authentication
    */
   getAuthResult() {
+    this.dispatch(
+      actions.requestAuthorization()
+    );
+
     return firebase
       .auth()
       .getRedirectResult()
-      .then(result => {
-        if (result.credential) {
-          this.dispatch(
-            actions.receiveAuthorization({
-              user : result.user,
-              token: result.credential.accessToken
-            })
-          );
-          return this.saveUser();
-        }
-        this.dispatch(actions.receiveAuthorization());
-        return Promise.resolve();
+      .catch((error) => {
+        console.log('error', error);
       });
   }
 
@@ -138,13 +141,14 @@ class App extends Component {
    * @method save user
    * @returns {Promise.<*>}
    */
-  saveUser() {
-    // cache
-    const { user } = this.state;
-
+  saveUser(user) {
     if (!user) {
       return Promise.reject(new Error('no user'));
     }
+
+    this.dispatch(
+      actions.requestUsers()
+    );
 
     const { uid, displayName, photoURL } = user;
     return firebaseDb
@@ -152,6 +156,18 @@ class App extends Component {
       .set({
         displayName,
         photoURL
+      })
+      .then(() => {
+        this.dispatch(
+          actions.receiveAuthorization({
+            uid,
+            displayName,
+            photoURL
+          })
+        );
+      })
+      .catch((error) => {
+        console.log('error', error);
       });
   }
 
@@ -160,7 +176,7 @@ class App extends Component {
    */
   render() {
     // cache
-    const { user, token, users, uiIsLoading } = this.state;
+    const { user, users, uiIsLoading } = this.state;
 
     // JSX template
     return (
@@ -174,7 +190,7 @@ class App extends Component {
             return (
               <div className="App-loading"><img src={icon_123_spinner} alt="Loading..." width={64} height={64} /></div>
             );
-          } else if (!(user && token)) {
+          } else if (!user) {
             return (
               <div className="App-login">
                 <button type="button" onClick={App.handleClickLoginButton}><img src={icon_433_github} alt="" width={64} height={64} />Login with GitHub.</button>
