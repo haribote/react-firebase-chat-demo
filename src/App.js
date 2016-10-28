@@ -13,7 +13,7 @@ import actions, { REQUEST_AUTHORIZATION, RECEIVE_AUTHORIZATION, REQUEST_USERS, R
 class App extends Component {
   /**
    * @static
-   * @returns {{user: null, uiIsLoading: boolean}}
+   * @returns {{user: null, users: {}, uiIsLoading: boolean}}
    */
   static get initialState() {
     return {
@@ -52,6 +52,11 @@ class App extends Component {
 
     // initialize state
     this.state = App.initialState;
+
+    // bind context
+    this.bindContextAll(
+      'handleClickLogoutButton'
+    );
   }
 
   /**
@@ -80,6 +85,15 @@ class App extends Component {
     return Object.keys(this.state.users).length > 0;
   }
 
+  /**
+   * @method bind context to self
+   * @param methodNames
+   */
+  bindContextAll(...methodNames) {
+    methodNames.forEach((methodName) => {
+      this[methodName] = this[methodName].bind(this);
+    });
+  }
   /**
    * @method action dispatcher
    * @param action
@@ -110,13 +124,13 @@ class App extends Component {
 
     case RECEIVE_AUTHORIZATION:
       return {
-        user       : payload || this.state.user,
+        user       : payload || App.initialState.user,
         uiIsLoading: false
       };
 
     case RECEIVE_USERS:
       return {
-        users      : Object.assign({}, this.state.users, payload),
+        users      : payload ? Object.assign({}, this.state.users, payload) : App.initialState.users,
         uiIsLoading: false
       };
 
@@ -141,12 +155,27 @@ class App extends Component {
       });
   }
 
+  requestLogout() {
+    this.dispatch(
+      actions.requestAuthorization()
+    );
+
+    return this.removeUser()
+      .then(() => firebase.auth().signOut())
+      .catch((error) => {
+        console.log('error', error);
+      });
+  }
+
   /**
    * @method save user
    * @returns {Promise.<*>}
    */
   saveUser(user) {
     if (!user) {
+      this.dispatch(
+        actions.receiveAuthorization()
+      );
       return Promise.reject(new Error('no user'));
     }
 
@@ -175,6 +204,19 @@ class App extends Component {
       });
   }
 
+  removeUser() {
+    // cache
+    const { user } = this.state;
+
+    this.dispatch(
+      actions.requestUsers()
+    );
+
+    return firebaseDb
+      .ref(`users/${user.uid}`)
+      .remove();
+  }
+
   /**
    * @returns {XML}
    */
@@ -197,18 +239,34 @@ class App extends Component {
           } else if (!user) {
             return (
               <div className="App-login">
-                <button type="button" onClick={App.handleClickLoginButton}><img src={icon_433_github} alt="" width={64} height={64} />Login with GitHub.</button>
+                <button
+                  type="button"
+                  onClick={App.handleClickLoginButton}
+                >
+                  <img src={icon_433_github} alt="" width={64} height={64} />
+                  <span>Click to login <br />with GitHub.</span>
+                </button>
               </div>
             );
           }
           return (
             <div className="App-main">
-              <Users currentUser={user} users={users} />
+              <Users currentUser={user} users={users} onClickLogout={this.handleClickLogoutButton} />
             </div>
           );
         })()}
       </div>
     );
+  }
+
+  /**
+   * @listen click on (.Users button)
+   * @param ev
+   */
+  handleClickLogoutButton(ev) {
+    ev.preventDefault();
+
+    this.requestLogout();
   }
 }
 

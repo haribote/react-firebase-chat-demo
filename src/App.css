@@ -35,11 +35,13 @@
 .App-login button {
   appearance: none;
   cursor: pointer;
+  display: flex;
   box-sizing: content-box;
   height: 64px;
   margin: 0;
   padding: 24px;
   border: none;
+  background-color: #fff;
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0);
   color: #222;
   font-size: large;
@@ -54,6 +56,11 @@
 .App-login img {
   margin-right: 15px;
   vertical-align: middle;
+}
+
+.App-login span {
+  display: inline-block;
+  line-height: 32px;
 }
 
 .App-main {

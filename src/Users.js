@@ -1,5 +1,5 @@
 import React, { Component, PropTypes } from 'react';
-import classNames from 'classnames';
+import icon_277_exit from './icons/icon_277_exit.svg';
 import './Users.css';
 
 /**
@@ -8,12 +8,13 @@ import './Users.css';
 export default class Users extends Component {
   /**
    * @static propTypes
-   * @returns {{currentUser: *, users: *}}
+   * @returns {{currentUser: *, users: *, onClickLogout: *}}
    */
   static get propTypes() {
     return {
-      currentUser: PropTypes.object.isRequired,
-      users      : PropTypes.array.isRequired
+      currentUser  : PropTypes.object.isRequired,
+      users        : PropTypes.array.isRequired,
+      onClickLogout: PropTypes.func.isRequired
     }
   }
 
@@ -44,7 +45,7 @@ export default class Users extends Component {
    */
   renderUser(uid) {
     // cache
-    const { currentUser } = this.props;
+    const { currentUser, onClickLogout } = this.props;
     const user = this.props.users[uid];
 
     if (!user) {
@@ -52,9 +53,7 @@ export default class Users extends Component {
     }
 
     return (
-      <li className={classNames({
-        'Users-me': uid === currentUser.uid
-      })}>
+      <li>
         <img
           src={user.photoURL}
           alt=""
@@ -62,6 +61,11 @@ export default class Users extends Component {
           height={32}
         />
         <span>{user.displayName}</span>
+        {(uid === currentUser.uid) && (
+          <button type="button" onClick={onClickLogout}>
+            <img src={icon_277_exit} alt="Logout" width={16} height={16} />
+          </button>
+        )}
       </li>
     );
   }

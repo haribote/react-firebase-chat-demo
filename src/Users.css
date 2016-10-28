@@ -11,14 +11,18 @@
 }
 
 .Users li {
+    position: relative;
     display: flex;
-    margin: 15px;
+    margin: 0;
+    padding: 15px;
     list-style: none;
     align-items: center;
     color: #eee;
 }
 
-.Users li.Users-me {
+.Users li:first-of-type {
+    padding-right: 40px;
+    background-color: rgba(255, 255, 255, .25);
     color: #fff;
 }
 
@@ -26,6 +30,39 @@
     border-top: 1px solid #eee;
 }
 
-.Users li img {
+.Users li > img {
     margin-right: 10px;
+    background-color: #eee;
+    border-radius: 16px;
+}
+
+.Users button {
+    appearance: none;
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: .4;
+    box-sizing: content-box;
+    width: 24px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0);
+    color: #222;
+    line-height: 24px;
+    transition: opacity 200ms ease, opacity 200ms ease;
+}
+
+.Users button:hover,
+.Users button:active {
+    background-color: rgba(255, 255, 255, 1);
+    opacity: .6;
+}
+
+.Users button > img {
+    text-align: center;
+    vertical-align: middle;
 }
