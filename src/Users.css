@@ -1,0 +1,31 @@
+.Users {
+    overflow: scroll;
+    width: 250px;
+    height: calc(100vh - 190px);
+    background-color: #fb8261;
+}
+
+.Users ul {
+    margin: 0;
+    padding: 0;
+}
+
+.Users li {
+    display: flex;
+    margin: 15px;
+    list-style: none;
+    align-items: center;
+    color: #eee;
+}
+
+.Users li.Users-me {
+    color: #fff;
+}
+
+.Users li + li {
+    border-top: 1px solid #eee;
+}
+
+.Users li img {
+    margin-right: 10px;
+}

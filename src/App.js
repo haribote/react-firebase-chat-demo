@@ -4,8 +4,12 @@ import logo from './logo.svg';
 import icon_123_spinner from './icons/icon_123_spinner.svg';
 import icon_433_github from './icons/icon_433_github.svg';
 import './App.css';
+import Users from './Users';
 import actions, { REQUEST_AUTHORIZATION, RECEIVE_AUTHORIZATION, REQUEST_USERS, RECEIVE_USERS } from './actions';
 
+/**
+ * App container
+ */
 class App extends Component {
   /**
    * @static
@@ -199,13 +203,7 @@ class App extends Component {
           }
           return (
             <div className="App-main">
-              <div className="Users">
-                <ul>
-                  {Object.keys(users).map((uid) => (
-                    <li><img src={users[uid].photoURL} alt="" width={64} /><span>{users[uid].displayName}</span></li>
-                  ))}
-                </ul>
-              </div>
+              <Users currentUser={user} users={users} />
             </div>
           );
         })()}
