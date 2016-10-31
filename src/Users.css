@@ -31,7 +31,7 @@
     color: #fff;
 }
 
-.Users li + li {
+.Users li:not(:first-of-type) + li {
     border-top: 1px solid #eee;
 }
 

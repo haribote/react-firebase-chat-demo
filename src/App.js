@@ -6,6 +6,7 @@ import icon_433_github from './icons/icon_433_github.svg';
 import './App.css';
 import Users from './Users';
 import Editor from './Editor';
+import Messages from './Messages';
 import actions, {
   REQUEST_AUTHORIZATION,
   RECEIVE_AUTHORIZATION,
@@ -167,14 +168,15 @@ class App extends Component {
 
     case RECEIVE_MESSAGES:
       return {
-        messages     : payload !== null ? (
+        currentMessage: App.initialState.currentMessage,
+        messages      : payload !== null ? (
           Object.keys(payload)
             .map((key) => payload[key])
             .sort((a, b) => (a - b))
         ) : (
           this.state.messages
         ),
-        uiIsMessaging: false
+        uiIsMessaging : false
       };
 
     default:
@@ -288,7 +290,6 @@ class App extends Component {
   render() {
     // cache
     const { user, users, currentMessage, messages, uiIsLoading, uiIsMessaging } = this.state;
-    console.log(...messages);
 
     // JSX template
     return (
@@ -318,6 +319,7 @@ class App extends Component {
           return (
             <div className="App-main">
               <Users currentUser={user} users={users} onClickLogout={this.handleClickLogoutButton} />
+              {messages.length && (<Messages currentUser={user} users={users} messages={messages} />)}
               <Editor message={currentMessage} disabled={uiIsMessaging} onChange={this.handleChangeCurrentMessage} onSubmit={this.handleSubmitMessage} />
             </div>
           );
