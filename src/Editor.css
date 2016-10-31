@@ -1,0 +1,60 @@
+.Editor {
+    position: absolute;
+    bottom: 0;
+    left: 250px;
+    right: 0;
+}
+
+.Editor form {
+    display: flex;
+    padding: 13px 16px;
+    background: #eee;
+}
+
+.Editor input {
+    appearance: none;
+    box-sizing: border-box;
+    width: calc(100% - 86px - 64px);
+    margin: 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.Editor span {
+    display: inline-block;
+    width: 70px;
+    margin: 0 8px;
+    color: #999;
+    font-size: .75rem;
+    text-align: right;
+    line-height: 36px;
+}
+
+.Editor button {
+    appearance: none;
+    width: 64px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background-color: #61DAFB;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 200ms ease;
+}
+
+.Editor input[disabled]
+.Editor button[disabled] {
+    pointer-events: none;
+    opacity: .6;
+}
+
+.Editor button:hover,
+.Editor button:active {
+    background-color: #2fcefa;
+}

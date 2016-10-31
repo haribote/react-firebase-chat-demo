@@ -5,7 +5,16 @@ import icon_123_spinner from './icons/icon_123_spinner.svg';
 import icon_433_github from './icons/icon_433_github.svg';
 import './App.css';
 import Users from './Users';
-import actions, { REQUEST_AUTHORIZATION, RECEIVE_AUTHORIZATION, REQUEST_USERS, RECEIVE_USERS } from './actions';
+import Editor from './Editor';
+import actions, {
+  REQUEST_AUTHORIZATION,
+  RECEIVE_AUTHORIZATION,
+  REQUEST_USERS,
+  RECEIVE_USERS,
+  CHANGE_CURRENT_MESSAGE,
+  REQUEST_SEND_MESSAGE,
+  RECEIVE_MESSAGES
+} from './actions';
 
 /**
  * App container
@@ -13,13 +22,16 @@ import actions, { REQUEST_AUTHORIZATION, RECEIVE_AUTHORIZATION, REQUEST_USERS, R
 class App extends Component {
   /**
    * @static
-   * @returns {{user: null, users: {}, uiIsLoading: boolean}}
+   * @returns {{user: null, users: {}, currentMessage: string, uiIsLoading: boolean, uiIsMessaging: boolean}}
    */
   static get initialState() {
     return {
-      user       : null,
-      users      : {},
-      uiIsLoading: true
+      user          : null,
+      users         : {},
+      currentMessage: '',
+      messages      : [],
+      uiIsLoading   : true,
+      uiIsMessaging : false
     }
   }
 
@@ -55,7 +67,9 @@ class App extends Component {
 
     // bind context
     this.bindContextAll(
-      'handleClickLogoutButton'
+      'handleClickLogoutButton',
+      'handleChangeCurrentMessage',
+      'handleSubmitMessage'
     );
   }
 
@@ -69,6 +83,13 @@ class App extends Component {
       .on('value', (snapShot) => {
         this.dispatch(
           actions.receiveUsers(snapShot.val())
+        );
+      });
+    firebaseDb
+      .ref('messages')
+      .on('value', (snapShot) => {
+        this.dispatch(
+          actions.receiveMessages(snapShot.val())
         );
       });
 
@@ -134,6 +155,28 @@ class App extends Component {
         uiIsLoading: false
       };
 
+    case CHANGE_CURRENT_MESSAGE:
+      return {
+        currentMessage: payload.slice(0, 100)
+      };
+
+    case REQUEST_SEND_MESSAGE:
+      return {
+        uiIsMessaging: true
+      };
+
+    case RECEIVE_MESSAGES:
+      return {
+        messages     : payload !== null ? (
+          Object.keys(payload)
+            .map((key) => payload[key])
+            .sort((a, b) => (a - b))
+        ) : (
+          this.state.messages
+        ),
+        uiIsMessaging: false
+      };
+
     default:
       return this.state;
     }
@@ -176,7 +219,7 @@ class App extends Component {
       this.dispatch(
         actions.receiveAuthorization()
       );
-      return Promise.reject(new Error('no user'));
+      return Promise.resolve();
     }
 
     this.dispatch(
@@ -217,12 +260,35 @@ class App extends Component {
       .remove();
   }
 
+  requestSendMessage() {
+    // cache
+    const { user, currentMessage, uiIsMessaging } = this.state;
+
+    if (currentMessage.length === 0 || currentMessage.length > 100 || uiIsMessaging) {
+      return Promise.reject();
+    }
+
+    this.dispatch(
+      actions.requestSendMessage(currentMessage)
+    );
+
+    return firebaseDb
+      .ref('messages')
+      .push()
+      .set({
+        uid     : user.uid,
+        message : currentMessage,
+        postedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+  }
+
   /**
    * @returns {XML}
    */
   render() {
     // cache
-    const { user, users, uiIsLoading } = this.state;
+    const { user, users, currentMessage, messages, uiIsLoading, uiIsMessaging } = this.state;
+    console.log(...messages);
 
     // JSX template
     return (
@@ -252,6 +318,7 @@ class App extends Component {
           return (
             <div className="App-main">
               <Users currentUser={user} users={users} onClickLogout={this.handleClickLogoutButton} />
+              <Editor message={currentMessage} disabled={uiIsMessaging} onChange={this.handleChangeCurrentMessage} onSubmit={this.handleSubmitMessage} />
             </div>
           );
         })()}
@@ -267,6 +334,29 @@ class App extends Component {
     ev.preventDefault();
 
     this.requestLogout();
+  }
+
+  /**
+   * @listen change on (.Editor input)
+   * @param ev
+   */
+  handleChangeCurrentMessage(ev) {
+    this.dispatch(
+      actions.changeCurrentMessage(ev.currentTarget.value)
+    );
+  }
+
+  /**
+   * @listen submit on (.Editor form)
+   * @param ev
+   */
+  handleSubmitMessage(ev) {
+    ev.preventDefault();
+
+    this.requestSendMessage()
+      .catch(() => {
+        ev.stopPropagation();
+      });
   }
 }
 
